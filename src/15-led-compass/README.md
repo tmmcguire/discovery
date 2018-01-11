@@ -22,12 +22,20 @@ Let's get familiar with the readings of the magnetometer by running the
 following starter code:
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
+#![deny(unsafe_code)]
+#![no_std]
+
+#[macro_use]
+extern crate aux;
+
+use aux::prelude::*;
+
+fn main() {
+    let (_leds, mut lsm303dlhc, mut delay, mut itm) = aux::init();
+
     loop {
-        iprintln!("{:?}", lsm303dlhc::magnetic_field());
-        delay::ms(1_000);
+        iprintln!(&mut itm.stim[0], "{:?}", lsm303dlhc.mag().unwrap());
+        delay.delay_ms(1_000_u16);
     }
 }
 ```
@@ -51,7 +59,8 @@ I16x3 { x: 324, y: 23, z: -12 }
 I16x3 { x: 324, y: 20, z: -10 }
 ```
 
-Now rotate the board 180 degrees. What X, Y and Z values do you see this time?
+Now rotate the board 180 degrees while keeping it parallel to the ground. What X, Y and Z values do
+you see this time?
 
-Finally, rotate the board 90 degrees clockwise. The `East` LED should be
-pointing north this time. What X, Y and Z values do you see this time?
+Can you rotate the board to make the value of Y zero *and* the value of X negative? With this
+orientation the North LED should point north.

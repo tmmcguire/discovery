@@ -1,5 +1,5 @@
 [package]
-authors = ["Jorge Aparicio <japaricious@gmail.com>"]
+authors = ["Jorge Aparicio <jorge@japaric.io>"]
 name = "async"
 version = "0.1.0"
 
@@ -7,8 +7,9 @@ version = "0.1.0"
 fixedvec = "0.2.3"
 pg = { path = "pg" }
 
-[profile.release]
-lto = true
-
 [profile.dev]
 codegen-units = 1
+
+[profile.release]
+debug = true
+lto = true

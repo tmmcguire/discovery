@@ -27,17 +27,14 @@ Go to the `06-hello-world` directory. There's some starter code in it:
 ``` rust
 #![deny(unsafe_code)]
 #![no_std]
-#![no_main]
 
-#[macro_use]
-extern crate pg;
+#[macro_use(iprintln)]
+extern crate aux;
 
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    iprintln!("Hello, world!");
+fn main() {
+    let mut itm = aux::init();
 
-    loop {}
+    iprintln!(&mut itm.stim[0], "Hello, world!");
 }
 ```
 
@@ -55,6 +52,8 @@ packets). Each frame has a header and a variable length payload. OpenOCD will
 receive these frames and write them directly to a file without parsing them. So,
 if the microntroller sends the string "Hello, world!" using the `iprintln`
 macro, OpenOCD's output file won't exactly contain that string.
+
+<!-- TODO update instructions for itmdump v0.2.0 -->
 
 To retrieve the original string, OpenOCD's output file will have to be parsed.
 We'll use the `itmdump` program to perform the parsing "on the fly".
@@ -112,6 +111,8 @@ redirect the ITM output into the same file that `itmdump` is watching.
 ```
 (gdb) monitor tpiu config internal itm.txt uart off 8000000
 ```
+
+<!-- TODO `monitor itm port 0 on` is also required -->
 
 All should be ready! Now execute the `iprintln!` statement.
 

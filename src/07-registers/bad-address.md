@@ -3,18 +3,18 @@
 Not all the peripheral memory can be accessed. Look at this program.
 
 ``` rust
-pub fn main() -> ! {
+fn main() {
     unsafe {
-        ptr::read_volatile(0x4800_1800 as *const u32);
+        core::ptr::read_volatile(0x4800_1800 as *const u32);
     }
-
-    loop {}
 }
 ```
 
 This address is close to the `GPIOE_BSRR` address we used before but this
 address is "invalid". Invalid in the sense that there's no register at this
 address.
+
+<!-- FIXME now there's no default ITM output -->
 
 Now, let's try it. Make sure you have `itmdump` running.
 
@@ -52,25 +52,28 @@ handler.
 Let's disassemble the program around the bad instruction.
 
 ```
-(gdb) disassemble /m 0x0800022a
-Dump of assembler code for function core::ptr::read_volatile<u32>:
-213     pub unsafe fn read_volatile<T>(src: *const T) -> T {
-   0x0800021c <+0>:     sub     sp, #20
-   0x0800021e <+2>:     mov     r1, r0
-   0x08000220 <+4>:     str     r0, [sp, #16]
-   0x08000222 <+6>:     str     r1, [sp, #4]
-   0x08000224 <+8>:     b.n     0x8000226 <core::ptr::read_volatile<u32>+10>
-   0x08000226 <+10>:    ldr     r0, [sp, #16]
-   0x08000228 <+12>:    str     r0, [sp, #12]
-   0x0800022a <+14>:    ldr     r0, [r0, #0] <--
-   0x0800022c <+16>:    str     r0, [sp, #8]
-   0x08000232 <+22>:    ldr     r0, [sp, #0]
-   0x08000234 <+24>:    add     sp, #20
-   0x08000236 <+26>:    bx      lr
+(gdb) disassemble /m 0x80001f4
+Dump of assembler code for function core::ptr::read_volatile:
+453     pub unsafe fn read_volatile<T>(src: *const T) -> T {
+   0x080001ec <+0>:     sub     sp, #16
+   0x080001ee <+2>:     mov     r1, r0
+   0x080001f0 <+4>:     str     r0, [sp, #8]
 
-214         intrinsics::volatile_load(src)
-   0x0800022e <+18>:    str     r0, [sp, #0]
-   0x08000230 <+20>:    b.n     0x8000232 <core::ptr::read_volatile<u32>+22>
+454         intrinsics::volatile_load(src)
+   0x080001f2 <+6>:     ldr     r0, [sp, #8]
+   0x080001f4 <+8>:     ldr     r0, [r0, #0]
+   0x080001f6 <+10>:    str     r0, [sp, #12]
+   0x080001f8 <+12>:    ldr     r0, [sp, #12]
+   0x080001fa <+14>:    str     r1, [sp, #4]
+   0x080001fc <+16>:    str     r0, [sp, #0]
+   0x080001fe <+18>:    b.n     0x8000200 <core::ptr::read_volatile+20>
+
+455     }
+   0x08000200 <+20>:    ldr     r0, [sp, #0]
+   0x08000202 <+22>:    add     sp, #16
+   0x08000204 <+24>:    bx      lr
+
+End of assembler dump.
 ```
 
 The exception was caused by a `ldr` instruction, a read instruction. The
@@ -86,26 +89,26 @@ probably saw this:
 
 ```
 Program received signal SIGTRAP, Trace/breakpoint trap.
-f3::exception::default_handler (sf=0x20009fa0) at $F3/src/exception.rs:82
+cortex_m_rt::default_handler (ef=0x10001f58) at $REGISTRY/cortex-m-rt-0.3.9/src/lib.rs:452
 ```
 
 The exception handler we are in right now was called with an argument. Let's
 inspect that argument:
 
 ```
-(gdb) p sf
-$5 = (cortex_m::StackFrame *) 0x20009fa8
+(gdb) p ef
+$2 = (cortex_m::exception::ExceptionFrame *) 0x10001f58
 
 (gdb) p/x *sf
-$4 = cortex_m::StackFrame {
+$3 = cortex_m::exception::ExceptionFrame {
   r0: 0x48001800,
   r1: 0x48001800,
-  r2: 0xd,
-  r3: 0x40013800,
-  r12: 0x2,
-  lr: 0x8000217,
+  r2: 0x0,
+  r3: 0x0,
+  r12: 0x0,
+  lr: 0x8000243,
   pc: 0x80001f4,
-  xpsr: 0x41000200
+  xpsr: 0x41000000
 }
 ```
 

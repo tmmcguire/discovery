@@ -10,19 +10,17 @@ data? The status register (`ISR`) has a bit for that purpose: `RXNE`. We can
 just busy wait on that flag.
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    let usart1 = unsafe { peripheral::usart1_mut() };
+fn main() {
+    let (usart1, _mono_timer, _itm) = aux::init();
 
     loop {
         // Wait until there's data available
-        while !usart1.isr.read().rxne() {}
+        while usart1.isr.read().rxne().bit_is_clear() {}
 
         // Retrieve the data
-        let _byte = usart1.rdr.read().rdr() as u8;
+        let _byte = usart1.rdr.read().rdr().bits() as u8;
 
-        unsafe { bkpt!() };
+        aux::bkpt();
     }
 }
 ```

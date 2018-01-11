@@ -20,13 +20,24 @@ in the XY plane. We'll use the `iprintln` macro to format the readings as Tab
 Separated Values (TSV).
 
 ``` rust
-pub fn main() -> ! {
+#![deny(unsafe_code)]
+#![no_std]
+
+#[macro_use]
+extern crate aux;
+
+use aux::prelude::*;
+use aux::I16x3;
+
+fn main() {
+    let (_leds, mut lsm303dlhc, mut delay, mut itm) = aux::init();
+
     loop {
-        let I16x3 { x, y, z } = lsm303dlhc::magnetic_field();
+        let I16x3 { x, y, z } = lsm303dlhc.mag().unwrap();
 
-        iprintln!("{}\t{}\t{}", x, y, z);
+        iprintln!(&mut itm.stim[0], "{}\t{}\t{}", x, y, z);
 
-        delay::ms(100);
+        delay.delay_ms(100_u8);
     }
 }
 ```

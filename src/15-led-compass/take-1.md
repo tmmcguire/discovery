@@ -35,39 +35,36 @@ Let's try that logic. Here's the starter code:
 
 ``` rust
 #![deny(unsafe_code)]
-#![no_main]
 #![no_std]
 
-#[macro_use]
-extern crate pg;
+extern crate aux;
 
-use pg::I16x3;
-use pg::led::Direction;
-use pg::{delay, led, lsm303dlhc};
+use aux::prelude::*;
+use aux::{Direction, I16x3};
 
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
+fn main() {
+    let (mut leds, mut lsm303dlhc, mut delay, _itm) = aux::init();
+
     loop {
-        let I16x3 { x, y, .. } = lsm303dlhc::magnetic_field();
+        let I16x3 { x, y, .. } = lsm303dlhc.mag().unwrap();
 
         // Look at the signs of the X and Y components to determine in which
         // quadrant the magnetic field is
         let dir = match (x > 0, y > 0) {
-            // Quadrant I
+            // Quadrant ???
             (true, true) => Direction::SouthEast,
-            // Quadrant II
+            // Quadrant ???
             (false, true) => { /* TODO */ },
-            // Quadrant III
+            // Quadrant ???
             (false, false) => { /* TODO */ },
-            // Quadrant IV
+            // Quadrant ???
             (true, false) => { /* TODO */ },
         };
 
-        led::all_off();
-        dir.on();
+        leds.iter_mut().for_each(|led| led.off());
+        leds[dir].on();
 
-        delay::ms(100);
+        delay.delay_ms(1_000_u16);
     }
 }
 ```

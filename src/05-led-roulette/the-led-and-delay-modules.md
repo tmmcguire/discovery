@@ -1,4 +1,6 @@
-# The `led` and `delay` modules
+# The `Led` and `Delay` abstractions
+
+<!-- TODO rename this file -->
 
 Now, I'm going to introduce two high level modules that we'll use to implement
 the LED roulette application.
@@ -18,24 +20,23 @@ Let's try out this API by modifying the starter code to look like this:
 ``` rust
 #![deny(unsafe_code)]
 #![no_std]
-#![no_main]
 
-extern crate pg;
+extern crate aux;
 
-use pg::delay;
-use pg::led::LEDS;
+use aux::prelude::*;
+use aux::{Delay, Led};
 
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    let half_period = 500; // ms
+fn main() {
+    let (mut delay, mut leds): (Delay, [Led; 8]) = aux::init();
+
+    let half_period = 500_u16;
 
     loop {
-        LEDS[0].on();
-        delay::ms(half_period);
+        leds[0].on();
+        delay.delay_ms(half_period);
 
-        LEDS[0].off();
-        delay::ms(half_period);
+        leds[0].off();
+        delay.delay_ms(half_period);
     }
 }
 ```
@@ -45,6 +46,8 @@ Now build it:
 ```
 $ xargo build --target thumbv7em-none-eabihf
 ```
+
+<!-- TODO document that `xargo run` eliminates this problem -->
 
 > **NOTE** It's quite common to forget to rebuild the program *before* starting
 > a GDB session. This omission can lead to very confusing debug sessions. Always

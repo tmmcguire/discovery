@@ -10,14 +10,14 @@ autoreload value will be the same as `ms`.
 ```
 // Set the timer to go off in `ms` ticks
 // 1 tick = 1 ms
-tim7.arr.write(|w| w.arr(ms));
+tim6.arr.write(|w| w.arr().bits(ms));
 ```
 
 Next, we need to enable the counter. It will immediately start counting.
 
 ``` rust
 // CEN: Enable the counter
-tim7.cr1.modify(|_, w| w.cen(true));
+tim6.cr1.modify(|_, w| w.cen().set_bit());
 ```
 
 Now we need to wait until the counter reaches the value of the autoreload
@@ -27,7 +27,7 @@ the status register (`SR`).
 
 ```
 // Wait until the alarm goes off (the "update event" occurs)
-while !tim7.sr.read().uif() {}
+while !tim6.sr.read().uif().bit_is_set() {}
 ```
 
 This pattern of just waiting until some condition is met, in this case that
@@ -40,7 +40,7 @@ skip over the "busy" waiting part.
 
 ``` rust
 // Clear the "update" flag
-tim7.sr.write(|w| w);
+tim6.sr.modify(|_, w| w.uif().clear_bit());
 ```
 
 Now, put this all together and check if it works as expected.

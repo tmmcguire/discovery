@@ -1,0 +1,21 @@
+[package]
+authors = ["Jorge Aparicio <jorge@japaric.io>"]
+name = "aux"
+version = "0.1.0"
+
+[dependencies.cortex-m-rt]
+version = "0.3.9"
+
+[dependencies.cortex-m]
+# version = "0.4.0"
+git = "https://github.com/japaric/cortex-m"
+
+[dependencies.f3]
+# version = "0.5.0"
+git = "https://github.com/japaric/f3"
+branch = "singletons"
+
+[dependencies.stm32f30x]
+# version = "0.6.0"
+features = ["rt"]
+git = "https://github.com/japaric/stm32f30x"

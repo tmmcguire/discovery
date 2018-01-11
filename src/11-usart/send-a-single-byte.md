@@ -11,15 +11,11 @@ Go into the `11-usart` directory and let's run the starter code therein. Make
 sure that you have minicom/PuTTY open.
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    let usart1 = unsafe { peripheral::usart1_mut() };
+fn main() {
+    let usart1 = aux::init().0;
 
     // Send a single character
-    usart1.tdr.write(|w| w.tdr(u16::from('X' as u8)));
-
-    loop {}
+    usart1.tdr.write(|w| w.tdr().bits(u16::from(b'X')));
 }
 ```
 

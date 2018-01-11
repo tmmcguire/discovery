@@ -5,10 +5,8 @@ The `panic!` macro also sends its output to the ITM!
 Change the `main` function to look like this:
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    panic!("Hello, world!")
+fn main() {
+    panic!("Hello, world!");
 }
 ```
 
@@ -45,7 +43,7 @@ You'll see some new output in `itmdump`'s terminal.
 
 ```
 # itmdump's terminal
-PANIC at 'Hello, world!', src/main.rs:11
+PANIC at 'Hello, world!', src/main.rs:7:5
 ```
 
 You won't get a `RUST_BACKTRACE` style backtrace in `itmdump`'s output, *but*
@@ -53,13 +51,10 @@ you can get the equivalent inside GDB. You already know the command:
 
 ```
 (gdb) backtrace
-#0  f3::lang_items::panic_fmt (msg=..., file=...,
-    line=10)
-    at $F3/src/lang_items.rs:12
-#1  0x0800193c in core::panicking::panic_fmt::h54fc4ef0e431f1de ()
-#2  0x080018d4 in core::panicking::panic::h2a0ea99cd46c9ef6 ()
-#3  0x080001f8 in hello_world::main ()
-    at $PWD/src/main.rs:10
+#0  rust_begin_unwind (args=..., file=..., line=7, col=5) at aux/src/lib.rs:34
+#1  0x08003fbe in core::panicking::panic_fmt ()
+#2  0x0800400c in core::panicking::panic ()
+#3  0x080001f6 in hello_world::main () at src/main.rs:7
 ```
 
 Ultimately, `panic!` is just another function call so you can see it leaves

@@ -6,25 +6,25 @@ Here's mine:
 
 ``` rust
 #![deny(unsafe_code)]
-#![no_main]
 #![no_std]
 
-extern crate pg;
+extern crate aux;
 
-use core::iter;
+use aux::prelude::*;
+use aux::{Delay, Led};
 
-use pg::delay;
-use pg::led::LEDS;
+fn main() {
+    let (mut delay, mut leds): (Delay, [Led; 8]) = aux::init();
 
-#[no_mangle]
-pub fn main() -> ! {
+    let ms = 50_u8;
     loop {
-        for (current, next) in LEDS.iter()
-            .zip(LEDS.iter().skip(1).chain(iter::once(&LEDS[0]))) {
-            next.on();
-            delay::ms(50);
-            current.off();
-            delay::ms(50);
+        for curr in 0..8 {
+            let next = (curr + 1) % 8;
+
+            leds[next].on();
+            delay.delay_ms(ms);
+            leds[curr].off();
+            delay.delay_ms(ms);
         }
     }
 }
@@ -50,9 +50,10 @@ solution? You can check that using the `size` command on the "release" binary:
 ```
 $ arm-none-eabi-size target/thumbv7em-none-eabihf/*/led-roulette
    text    data     bss     dec     hex filename
-   11484    108       0   11592    2d48 target/thumbv7em-none-eabihf/debug/led-roulette
-   560        0       0     560     230 target/thumbv7em-none-eabihf/release/led-roulette
+  20426       0       4   20430    4fce target/thumbv7em-none-eabihf/debug/led-roulette
+   2810       0       4    2814     afe target/thumbv7em-none-eabihf/release/led-roulette
 ```
+
 
 > **NOTE** The Cargo project is already configured to build the release binary
 > using LTO.

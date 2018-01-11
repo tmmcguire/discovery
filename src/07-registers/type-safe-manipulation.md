@@ -35,32 +35,23 @@ The best way to get familiar with this API is to port our running example to it.
 
 ``` rust
 #![no_std]
-#![no_main]
 
-extern crate pg;
+extern crate aux;
 
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    use pg::peripheral;
-
-    // Get mutable access to the GPIOE register block
-    // `unsafe` because this functions hands over (aliases) `&mut-` references
-    let gpioe = unsafe { peripheral::gpioe_mut() };
+fn main() {
+    let gpioe = aux::init().1;
 
     // Turn on the North LED
-    gpioe.bsrr.write(|w| w.bs9(true));
+    gpioe.bsrr.write(|w| w.bs9().set_bit());
 
     // Turn on the East LED
-    gpioe.bsrr.write(|w| w.bs11(true));
+    gpioe.bsrr.write(|w| w.bs11().set_bit());
 
     // Turn off the North LED
-    gpioe.bsrr.write(|w| w.br9(true));
+    gpioe.bsrr.write(|w| w.br9().set_bit());
 
     // Turn off the East LED
-    gpioe.bsrr.write(|w| w.br11(true));
-
-    loop {}
+    gpioe.bsrr.write(|w| w.br11().set_bit());
 }
 ```
 
@@ -83,7 +74,7 @@ the base address of the register block.
 
 ```
 $ (gdb) print gpioe
-$1 = (f3::peripheral::gpio::Gpio *) 0x48001000
+$1 = (stm32f30x::gpioc::RegisterBlock *) 0x48001000
 ```
 
 But if we instead `print *gpioe`, we'll get a "full view" of the register block.
@@ -91,65 +82,81 @@ The value of each of its registers will be printed. I recommend enabling pretty
 print (`set print pretty on`) first, though, to make the output more readable.
 
 ```
-(gdb) set print pretty on
-
 (gdb) print *gpioe
-$2 = f3::peripheral::gpio::Gpio {
-  moder: f3::peripheral::gpio::Moder {
-    register: volatile_register::RW<u32> {
-      register: 0x55550000
+$2 = stm32f30x::gpioc::RegisterBlock {
+  moder: stm32f30x::gpioc::MODER {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x55550000
+      }
     }
   },
-  otyper: f3::peripheral::gpio::Otyper {
-    register: volatile_register::RW<u32> {
-      register: 0x0
-    }
-  },
-  ospeedr: f3::peripheral::gpio::Ospeedr {
-    register: volatile_register::RW<u32> {
-      register: 0x0
-    }
-  },
-  pupdr: f3::peripheral::gpio::Pupdr {
-    register: volatile_register::RW<u32> {
-      register: 0x0
-    }
-  },
-  idr: f3::peripheral::gpio::Idr {
-    register: volatile_register::RO<u32> {
-      register: 0xcc
-    }
-  },
-  odr: f3::peripheral::gpio::Odr {
-    register: volatile_register::RW<u32> {
-      register: 0x0
-    }
-  },
-  bsrr: f3::peripheral::gpio::Bsrr {
-    register: volatile_register::WO<u32> {
-      register: core::cell::UnsafeCell<u32> {
+  otyper: stm32f30x::gpioc::OTYPER {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
         value: 0x0
       }
     }
   },
-  lckr: f3::peripheral::gpio::Lckr {
-    register: volatile_register::RW<u32> {
-      register: 0x0
+  ospeedr: stm32f30x::gpioc::OSPEEDR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
     }
   },
-  afrl: f3::peripheral::gpio::Afrl {
-    register: volatile_register::RW<u32> {
-      register: 0x0
+  pupdr: stm32f30x::gpioc::PUPDR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
     }
   },
-  afrh: f3::peripheral::gpio::Afrh {
-    register: volatile_register::RW<u32> {
-      register: 0x0
+  idr: stm32f30x::gpioc::IDR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0xcc
+      }
     }
   },
-  brr: f3::peripheral::gpio::Brr {
-    register: volatile_register::WO<u32> {
-      register: core::cell::UnsafeCell<u32> {
+  odr: stm32f30x::gpioc::ODR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
+    }
+  },
+  bsrr: stm32f30x::gpioc::BSRR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
+    }
+  },
+  lckr: stm32f30x::gpioc::LCKR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
+    }
+  },
+  afrl: stm32f30x::gpioc::AFRL {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
+    }
+  },
+  afrh: stm32f30x::gpioc::AFRH {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
+        value: 0x0
+      }
+    }
+  },
+  brr: stm32f30x::gpioc::BRR {
+    register: vcell::VolatileCell<u32> {
+      value: core::cell::UnsafeCell<u32> {
         value: 0x0
       }
     }
@@ -166,18 +173,18 @@ enabled, you'll see that it produces exactly the same instructions that the
 ```
 $ arm-none-eabi-objdump -Cd target/thumbv7em-none-eabihf/release/registers
 
-080001da <main>:
- 80001da:       f241 0018       movw    r0, #4120       ; 0x1018
- 80001de:       f44f 7100       mov.w   r1, #512        ; 0x200
- 80001e2:       f6c4 0000       movt    r0, #18432      ; 0x4800
- 80001e6:       6001            str     r1, [r0, #0]
- 80001e8:       f44f 6100       mov.w   r1, #2048       ; 0x800
- 80001ec:       6001            str     r1, [r0, #0]
- 80001ee:       f04f 7100       mov.w   r1, #33554432   ; 0x2000000
- 80001f2:       6001            str     r1, [r0, #0]
- 80001f4:       f04f 6100       mov.w   r1, #134217728  ; 0x8000000
- 80001f8:       6001            str     r1, [r0, #0]
- 80001fa:       e7fe            b.n     80001fa <main+0x20>
+08000374 <_ZN9registers4main17hc95971086f02247dE.llvm.1361E493>:
+ 8000374:       b580            push    {r7, lr}
+ 8000376:       f7ff ff41       bl      80001fc <aux::init>
+ 800037a:       f44f 7100       mov.w   r1, #512        ; 0x200
+ 800037e:       6181            str     r1, [r0, #24]
+ 8000380:       f44f 6100       mov.w   r1, #2048       ; 0x800
+ 8000384:       6181            str     r1, [r0, #24]
+ 8000386:       f04f 7100       mov.w   r1, #33554432   ; 0x2000000
+ 800038a:       6181            str     r1, [r0, #24]
+ 800038c:       f04f 6100       mov.w   r1, #134217728  ; 0x8000000
+ 8000390:       6181            str     r1, [r0, #24]
+ 8000392:       bd80            pop     {r7, pc}
 ```
 
 The best part of all this is that I didn't have to write a single line of code

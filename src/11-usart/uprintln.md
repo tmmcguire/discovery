@@ -64,28 +64,40 @@ Above we saw that `Write` is in `std::fmt`. We don't have access to `std` but
 `Write` is also available in `core::fmt`.
 
 ``` rust
+use core::fmt::{self, Write};
+
+use aux::usart1;
+
 macro_rules! uprint {
-    ($($arg:tt)*) => {
-        SerialPort{}.write_fmt(format_args!($($arg)*)).ok()
+    ($serial:expr, $($arg:tt)*) => {
+        $serial.write_fmt(format_args!($($arg)*)).ok()
     };
 }
 
 macro_rules! uprintln {
-    ($fmt:expr) => {
-        uprint!(concat!($fmt, "\n"))
+    ($serial:expr, $fmt:expr) => {
+        uprint!($serial, concat!($fmt, "\n"))
     };
-    ($fmt:expr, $($arg:tt)*) => {
-        uprint!(concat!($fmt, "\n"), $($arg)*)
+    ($serial:expr, $fmt:expr, $($arg:tt)*) => {
+        uprint!($serial, concat!($fmt, "\n"), $($arg)*)
     };
 }
 
-struct SerialPort {}
+struct SerialPort {
+    usart1: &'static mut usart1::RegisterBlock,
+}
 
-use core::fmt;
-
-impl fmt::Write for SerialPort {
+impl Write for SerialPort {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         // TODO implement this
     }
+}
+
+fn main() {
+    let (usart1, _mono_timer, _itm) = aux::init();
+
+    let mut serial = SerialPort { usart1 };
+
+    uprintln!(serial, "The quick brown fox jumps over the lazy dog.");
 }
 ```

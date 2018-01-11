@@ -34,25 +34,3 @@ can make use of the bus until the master *stops* the communication.
 
 The clock line determines how fast data can be exchanged and it usually operates
 at a frequency of 100 KHz (standard mode) or 400 KHz (fast mode).
-
-## Functional description
-
-## LSM303DLHC specific protocol
-
-> I2C operation - Section 5.1.1 - Page 20 - LSM303DLHC
-
-## Reading registers
-
-> I2C registers - Section 28.7 - Page 868 - Reference Manual
-
-Read a single register. Each register is one byte.
-
-
-```
-(gdb) next # several times
-
-(gdb) p/t byte
-$1 = 1001000
-```
-
-Receive several bytes.

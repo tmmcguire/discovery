@@ -3,19 +3,13 @@
 If you wrote your program like this:
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    let usart1 = unsafe { peripheral::usart1_mut() };
+fn main() {
+    let (usart1, _mono_timer, _itm) = aux::init().0;
 
     // Send a string
     for byte in b"The quick brown fox jumps over the lazy dog.".iter() {
-        usart1.tdr.write(|w| w.tdr(u16::from(*byte)));
+        usart1.tdr.write(|w| w.tdr().bits(u16::from(*byte)));
     }
-
-    unsafe { bkpt!() }
-
-    loop {}
 }
 ```
 
@@ -24,14 +18,14 @@ program compiled in debug mode.
 
 ```
 # minicom's terminal
-The uik ron fx ums oerth lzy og
+The uic brwn oxjums oer helaz do.
 ```
 
 And if you compiled in release mode, you probably only got something like this:
 
 ```
 # minicom's terminal
-Tq
+T
 ```
 
 What went wrong?
@@ -55,27 +49,22 @@ We can actually time how long it takes to execute the `for` loop. There's a
 the one in `std::time`.
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    use pg::time::{FREQUENCY, Instant};
+fn main() {
+    let (usart1, mono_timer, mut itm) = aux::init();
 
-    let usart1 = unsafe { peripheral::usart1_mut() };
-
-    let instant = Instant::now();
+    let instant = mono_timer.now();
     // Send a string
     for byte in b"The quick brown fox jumps over the lazy dog.".iter() {
-        usart1.tdr.write(|w| w.tdr(u16::from(*byte)));
+        usart1.tdr.write(|w| w.tdr().bits(u16::from(*byte)));
     }
-    let elapsed = instant.elapsed(); // ticks
+    let elapsed = instant.elapsed(); // in ticks
 
-    iprintln!("`for` loop took {} ticks ({} us)",
-              elapsed,
-              elapsed as f32 / FREQUENCY as f32 * 1e6);
-
-    unsafe { bkpt!() }
-
-    loop {}
+    iprintln!(
+        &mut itm.stim[0],
+        "`for` loop took {} ticks ({} us)",
+        elapsed,
+        elapsed as f32 / mono_timer.frequency().0 as f32 * 1e6
+    );
 }
 ```
 
@@ -83,7 +72,7 @@ In debug mode, I get:
 
 ```
 # itmdump's terminal
-`for` loop took 21614 ticks (2701.75 us)
+`for` loop took 22823 ticks (2852.875 us)
 ```
 
 This is less than 3,500 microseconds but it's not that far off and that's why
@@ -100,27 +89,25 @@ data loss.
 Let's use that to slowdown the processor.
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    let usart1 = unsafe { peripheral::usart1_mut() };
+fn main() {
+    let (usart1, mono_timer, mut itm) = aux::init();
 
-    let instant = Instant::now();
+    let instant = mono_timer.now();
+    // Send a string
     for byte in b"The quick brown fox jumps over the lazy dog.".iter() {
         // wait until it's safe to write to TDR
-        while !usart1.isr.read().txe() {}
+        while usart1.isr.read().txe().bit_is_clear() {}
 
-        usart1.tdr.write(|w| w.tdr(u16::from(*byte)));
+        usart1.tdr.write(|w| w.tdr().bits(u16::from(*byte)));
     }
-    let elapsed = instant.elapsed(); // ticks
+    let elapsed = instant.elapsed(); // in ticks
 
-    iprintln!("`for` loop took {} ticks ({} us)",
-              elapsed,
-              elapsed as f32 / FREQUENCY as f32 * 1e6);
-
-    unsafe { bkpt!() }
-
-    loop {}
+    iprintln!(
+        &mut itm.stim[0],
+        "`for` loop took {} ticks ({} us)",
+        elapsed,
+        elapsed as f32 / mono_timer.frequency().0 as f32 * 1e6
+    );
 }
 ```
 
@@ -137,5 +124,5 @@ microseconds as well. The timing below is for the "debug" version.
 
 ```
 # itmdump's console
-`for` loop took 30397 ticks (3799.625 us)
+`for` loop took 30475 ticks (3809.375 us)
 ```

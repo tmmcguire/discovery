@@ -23,10 +23,8 @@ extern crate m;
 #[macro_use]
 extern crate pg;
 
-// you'll find this useful ;-)
 use core::f32::consts::PI;
 
-// this trait provides the `atan2` method
 use m::Float;
 use pg::I16x3;
 use pg::led::Direction;
@@ -38,7 +36,7 @@ pub fn main() -> ! {
     loop {
         let I16x3 { x, y, .. } = lsm303dlhc::magnetic_field();
 
-        let theta = (y as f32).atan2(x as f32);  // radians
+        let theta = (y as f32).atan2(x as f32);
 
         // TODO pick a direction to point to based on `theta`
 
@@ -48,6 +46,7 @@ pub fn main() -> ! {
         delay::ms(100);
     }
 }
+
 ```
 
 Suggestions/tips:

@@ -72,8 +72,10 @@ How do we prevent LLVM from misoptimizing our program? We use *volatile*
 operations instead of plain reads/writes:
 
 ``` rust
-pub fn main() -> ! {
+fn main() {
     use core::ptr;
+
+    aux::init();
 
     unsafe {
         // A magic address!
@@ -91,8 +93,6 @@ pub fn main() -> ! {
         // Turn off the "East" LED
         ptr::write_volatile(GPIOE_BSRR as *mut u32, 1 << (11 + 16));
     }
-
-    loop {}
 }
 ```
 

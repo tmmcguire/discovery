@@ -25,19 +25,17 @@ file:
 
 ``` rust
 #![no_std]
-#![no_main]
 
-extern crate pg;
+extern crate aux;
 
-#[no_mangle]
-pub fn main() -> ! {
+fn main() {
     let y;
     let x = 42;
     y = x;
-
-    loop {}
 }
 ```
+
+<!-- FIXME outdated: `#[no_main]` and `#[no_mangle]` are no longer required -->
 
 There's some unusual stuff in it: `#![no_main]`, `#[no_mangle]` and `main` is
 both `pub` and has signature `fn() -> !`. For now, why those are the way they

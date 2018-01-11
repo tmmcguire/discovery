@@ -15,7 +15,7 @@ We'll need to change the address we request from the magnetometer from
 
 ```
 // Send the address of the register that we want to read: OUT_X_H_M
-i2c1.txdr.write(|w| w.txdata(OUT_X_H_M));
+i2c1.txdr.write(|w| w.txdata().bits(OUT_X_H_M));
 ```
 
 We'll have to request the slave for six bytes rather than just one.
@@ -23,7 +23,7 @@ We'll have to request the slave for six bytes rather than just one.
 ``` rust
 // Broadcast RESTART
 // Broadcast the MAGNETOMETER address with the R/W bit set to Read
-i2c1.cr2.modify(|_, w| w.start(true).nbytes(6).rd_wrn(true).autoend(true));
+i2c1.cr2.modify(|_, w| w.start(true).nbytes().bits(6).rd_wrn().set_bit().autoend().set_bit());
 ```
 
 And fill a buffer rather than read just one byte:
@@ -32,9 +32,9 @@ And fill a buffer rather than read just one byte:
 let mut buffer = [0u8; 6];
 for byte in &mut buffer {
     // Wait until we have received the contents of the register
-    while !i2c1.isr.read().rxne() {}
+    while i2c1.isr.read().rxne().bit_is_clear() {}
 
-    *byte = i2c1.rxdr.read().rxdata();
+    *byte = i2c1.rxdr.read().rxdata().bits();
 }
 // Broadcast STOP (automatic because of `AUTOEND = 1`)
 ```
@@ -43,48 +43,75 @@ Putting it all together inside a loop alongside a delay to reduce the data
 throughput:
 
 ``` rust
-#[inline(never)]
-#[no_mangle]
-pub fn main() -> ! {
-    let i2c1 = unsafe { peripheral::i2c1_mut() };
+#![no_std]
 
+#[macro_use]
+extern crate aux;
+
+use aux::prelude::*;
+
+// Slave address
+const MAGNETOMETER: u8 = 0b001_1110;
+
+// Addresses of the magnetometer's registers
+const OUT_X_H_M: u8 = 0x03;
+const IRA_REG_M: u8 = 0x0A;
+
+fn main() {
+    let (i2c1, mut delay, mut itm) = aux::init();
+
+    // Stage 1: Send the address of the register we want to read to the
+    // magnetometer
     loop {
         // Broadcast START
         // Broadcast the MAGNETOMETER address with the R/W bit set to Write
-        i2c1.cr2.write(|w| {
-            w.start(true)
-                .sadd1(MAGNETOMETER)
-                .rd_wrn(false)
-                .nbytes(1)
-                .autoend(false)
+        i2c1.cr2.write(|w| unsafe {
+            w.start()
+                .set_bit()
+                .sadd1()
+                .bits(MAGNETOMETER)
+                .rd_wrn()
+                .clear_bit()
+                .nbytes()
+                .bits(1)
+                .autoend()
+                .clear_bit()
         });
 
         // Wait until we can send more data
-        while !i2c1.isr.read().txis() {}
+        while i2c1.isr.read().txis().bit_is_clear() {}
 
         // Send the address of the register that we want to read: IRA_REG_M
-        i2c1.txdr.write(|w| w.txdata(OUT_X_H_M));
+        i2c1.txdr.write(|w| unsafe { w.txdata().bits(OUT_X_H_M) });
 
         // Wait until the previous byte has been transmitted
-        while !i2c1.isr.read().tc() {}
+        while i2c1.isr.read().tc().bit_is_clear() {}
 
         // Broadcast RESTART
         // Broadcast the MAGNETOMETER address with the R/W bit set to Read
-        i2c1.cr2
-            .modify(|_, w| w.start(true).nbytes(6).rd_wrn(true).autoend(true));
+        i2c1.cr2.modify(|_, w| unsafe {
+            w.start()
+                .set_bit()
+                .nbytes()
+                .bits(6)
+                .rd_wrn()
+                .set_bit()
+                .autoend()
+                .set_bit()
+        });
 
         let mut buffer = [0u8; 6];
         for byte in &mut buffer {
             // Wait until we have received something
-            while !i2c1.isr.read().rxne() {}
+            while i2c1.isr.read().rxne().bit_is_clear() {}
 
-            *byte = i2c1.rxdr.read().rxdata();
+            *byte = i2c1.rxdr.read().rxdata().bits();
         }
         // Broadcast STOP (automatic because of `AUTOEND = 1`)
 
-        iprintln!("{:?}", buffer);
+        iprintln!(&mut itm.stim[0], "{:?}", buffer);
 
-        delay::ms(1_000);
+        delay.delay_ms(1_000_u16);
     }
 }
 ```
@@ -120,7 +147,7 @@ let x = ((x_h << 8) + x_l) as i16;
 let y = ((y_h << 8) + y_l) as i16;
 let z = ((z_h << 8) + z_l) as i16;
 
-iprintln!("{:?}", (x, y, z));
+iprintln!(&mut itm.stim[0], "{:?}", (x, y, z));
 ```
 
 Now it should look better:
